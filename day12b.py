@@ -26,12 +26,15 @@ TESTS = """initial state: #..#.#..##......###...###
 
 DEBUG = True
 
+last_tot = 0
+diff_q = []
+
 
 def solve(data):
     plants = "..." + data[0].replace("initial state: ", "") + "..........."
     rules = {rule.split(" => ")[0]:rule.split(" => ")[1] for rule in data[1:]}
 
-
+    global last_tot
     
     last = plants
 
@@ -63,9 +66,21 @@ def solve(data):
 
 
     
-        pots_w_plants = [i-3 for i in range(len(plants)) if plants[i] == "#"]
+        pots_w_plants = sum([i-3 for i in range(len(plants)) if plants[i] == "#"])
 
-        print(sum(pots_w_plants))
+
+
+        diff_q.append(pots_w_plants - last_tot)
+        print(diff_q)
+
+        if len(diff_q) > 2 and diff_q[-1] == diff_q[-2]:            
+
+            return pots_w_plants + ((LIMIT - generation-1) * diff_q[-1])
+
+        last_tot = pots_w_plants
+        
+
+        
         
     return sum(pots_w_plants)
     
@@ -80,7 +95,7 @@ if __name__ == "__main__":
 
     
 
-    if p.check(TESTS, solve):
+    if True:
         LIMIT = 50000000000
         puzzle_input = p.load_puzzle()
         puzzle_input = p.pre_process(puzzle_input, *PP_ARGS)
