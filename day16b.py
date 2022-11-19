@@ -1,5 +1,5 @@
 from re import search, match, findall
-from collections import Counter
+from collections import Counter, defaultdict
 from helpers import PuzzleHelper
 
 PP_ARGS = False, False #rotate, cast int
@@ -93,7 +93,7 @@ def gtrr(register, operands):
 
 def solve(data):
     count = 0
-
+    poss_map = defaultdict(set)
 
 
     while data:
@@ -101,6 +101,7 @@ def solve(data):
 
         before = data.pop(0)
         if "Before" not in before:
+            data.insert(0, before)
             break
         
         instruction = data.pop(0)
@@ -110,8 +111,8 @@ def solve(data):
 
         before = eval(before.replace("Before: ", ""))
         instruction = tuple(map(int, instruction.split(" ")))
+        opcode = instruction[0]
         operands = instruction[1:]
-        
         after = eval(after.replace("After:  ", ""))
 
 
@@ -126,22 +127,44 @@ def solve(data):
             
 
             if result == after:
-                matches += 1
+                poss_map[opcode].add(op.__name__)
+
+    resolved = {}
+    while any(len(possibilities)>1 for possibilities in poss_map.values()):
+        
+        poss_map_copy = dict(poss_map)
+        for opcode, possibility in poss_map.items():
+            if opcode in resolved:  continue
+
+            if len(possibility) == 1:
+                possibility = possibility.pop()
+                for notcode, thought_possible in poss_map.items():       # remove from all other mappings
+                    if notcode == opcode:   continue
+
+                    if possibility in thought_possible:
+                        poss_map_copy[notcode].remove(possibility)
+
+                resolved[opcode] = possibility
+
                 
+    register = [0, 0, 0, 0]        
+    for instruction in data:
+        instruction = tuple(map(int, instruction.split()))
+        opcode = instruction[0]
+        operands = instruction[1:]
+        
+        
+        register = eval(f"{resolved[opcode]}(register, operands)")
+        
 
-        if matches >= 3:
-            count += 1
-
-
-
-    return count
+    return register[0]
 
 
 
 if __name__ == "__main__":
     p = PuzzleHelper(DAY, TEST_DELIM, FILE_DELIM, DEBUG, PP_ARGS)
 
-    if p.check(TESTS, solve):
+    if True: #p.check(TESTS, solve):
         puzzle_input = p.load_puzzle()
         puzzle_input = p.pre_process(puzzle_input, *PP_ARGS)
         print("FINAL ANSWER: ", solve(puzzle_input))
